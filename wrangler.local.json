@@ -1,0 +1,7 @@
+{
+  "name":"pep-order-desk-local",
+  "main":"dist/server/index.js",
+  "compatibility_date":"2025-12-01",
+  "d1_databases":[{"binding":"DB","database_name":"DB","database_id":"00000000-0000-4000-8000-000000000001"}],
+  "r2_buckets":[{"binding":"BUCKET","bucket_name":"pep-originals-local"}]
+}

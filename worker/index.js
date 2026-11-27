@@ -1,12 +1,9 @@
-const home = `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PEP Order Desk</title>
-<style>*{box-sizing:border-box}body{margin:0;background:#f5f7fa;color:#142638;font:18px/1.55 system-ui}header{background:#15374a;color:white;padding:18px 6vw;font-weight:650}main{margin:12vh auto;max-width:740px;padding:32px}h1{font-size:clamp(36px,6vw,62px);line-height:1.08;letter-spacing:-.045em;margin:0}p{max-width:48ch;color:#405466}a{display:inline-block;padding:.65rem 1.1rem;background:#155861;color:white;border-radius:5px;text-decoration:none}a:focus-visible{outline:3px solid #aa6600;outline-offset:3px}</style><header>PEP Brands · Enterprise Engineering</header><main><h1>PEP Order Desk</h1><p>Purchase order review and approval. This first release lets you check whether the app can reach its database.</p><a href="/health">Check database connection</a></main></html>`;
+import {home,browser} from './ui.js';
+import {identity,login,logout} from './auth.js';
+import {Problem,requireThat,json} from './common.js';
+import * as orders from './orders.js';
 
-export default {
-  async fetch(request, env) {
-    const path = new URL(request.url).pathname;
-    if (request.method !== 'GET') return new Response('Method unavailable.', {status:405, headers:{Allow:'GET'}});
-    if (path === '/') return new Response(home,{headers:{'Content-Type':'text/html; charset=utf-8'}});
-    if (path !== '/health') return new Response('Page not found.',{status:404});
+async function health(env){
     const headers = {'Cache-Control':'no-store'};
     try {
       const result = await env.DB.prepare('SELECT 1 AS reachable').first();
@@ -16,5 +13,37 @@ export default {
       console.error(JSON.stringify({time:new Date().toISOString(),event:'health.database_failed',type:error.name,message:'Database probe failed'}));
       return Response.json({status:'unavailable',message:'Database temporarily unavailable.'}, {status:503, headers});
     }
+}
+async function route(request,env){
+  const {pathname:path,origin}=new URL(request.url),method=request.method;
+  if(path==='/health'&&method==='GET') return health(env);
+  if(path==='/'&&method==='GET')return new Response(home,{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','Content-Security-Policy':"default-src 'self'; style-src 'unsafe-inline'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"}});
+  if(path==='/app.js'&&method==='GET')return new Response('('+browser.toString()+')();',{headers:{'Content-Type':'text/javascript','Cache-Control':'no-store'}});
+  requireThat(path.startsWith('/api/'),404,'Page not found.');
+  if(method!=='GET')requireThat(!request.headers.has('Origin')||request.headers.get('Origin')===origin,403,'Different origin refused.');
+  if(path==='/api/login'&&method==='POST')return login(request,env.DB);
+  const user=await identity(request,env.DB);
+  if(path==='/api/logout'&&method==='POST')return logout(request,env.DB);
+  if(path==='/api/orders'){
+    if(method==='GET')return orders.list(env.DB,user);
+    if(method==='POST')return orders.create(request,env,user);
   }
-};
+  const match=path.match(/^\/api\/orders\/([a-f0-9-]+)(?:\/(pdf|submit|approve|reject))?$/);
+  requireThat(match,404,'Page not found.');
+  const [,id,action]=match;
+  const po=await env.DB.prepare('SELECT * FROM pos WHERE id=?').bind(id).first();
+  requireThat(po,404,'Order unavailable.');
+  if(method==='GET'&&!action)return orders.detail(env,po,user);
+  if(method==='GET'&&action==='pdf')return orders.pdf(env,po,user);
+  if(method==='PUT'&&!action)return orders.edit(request,env.DB,po,user);
+  if(method==='POST'&&['submit','approve','reject'].includes(action))return orders.transition(request,env.DB,po,user,action);
+  throw new Problem(405,'Method unavailable.');
+}
+export default {async fetch(request,env){
+  try{return await route(request,env);}
+  catch(e){
+    if(e instanceof Problem)return json({message:e.message},e.status);
+    console.error(JSON.stringify({time:new Date().toISOString(),event:'request.failed',type:e.name,message:'Request could not be completed'}));
+    return json({message:'Could not complete this request. Please try again.'},500);
+  }
+}};
