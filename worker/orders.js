@@ -1,4 +1,6 @@
 import {Problem,requireThat,json,readJSON} from './common.js';
+import {inspectPdf} from './pdf-extraction.js';
+import {checks} from './po-text.js';
 const editable=p=>p.status==='DRAFT'||p.status==='REJECTED';
 const money=n=>Number.isSafeInteger(n)&&n>=0&&n<=1e12;
 function fields(data){
@@ -16,12 +18,8 @@ function fields(data){
 }
 function validateSubmit(p){
   const data=fields({...p,items:JSON.parse(p.items)});
-  let sum=0;
-  data.items.forEach((row,i)=>{
-    requireThat(Math.abs(row.qty*row.price-row.amount)<=100,400,'Line '+(i+1)+' amount differs from quantity × price by more than ₹1.');
-    sum+=row.amount;
-  });
-  requireThat(!data.items.length||Math.abs(sum-data.total)<=100,400,'Line amounts differ from the printed total by more than ₹1.');
+  const result=checks(data);
+  requireThat(!result.issues.length,400,result.issues.map(i=>i.message).join(' '));
 }
 function ownCreator(p,u){return u.creator && p.owner===u.username;}
 function visible(p,u){return ownCreator(p,u)||(u.approver&&p.status==='SUBMITTED');}
@@ -38,15 +36,14 @@ export async function create(req,env,u){
   try {form=await req.formData(); data=JSON.parse(form.get('order'));} catch {throw new Problem(400,'Enter the order and attach a PDF.');}
   const v=fields(data);
   const file=form.get('pdf');
-  requireThat(file&&typeof file.arrayBuffer==='function'&&file.size>0&&file.size<=5000000,400,'Attach one PDF up to 5 MB.');
-  requireThat((await file.slice(0,5).text())==='%PDF-',400,'Original file must be a PDF.');
+  const {bytes,...extraction}=await inspectPdf(file);
   const id=crypto.randomUUID(), key='originals/'+id+'.pdf';
-  await env.BUCKET.put(key,await file.arrayBuffer(),{httpMetadata:{contentType:'application/pdf'}});
+  await env.BUCKET.put(key,bytes,{httpMetadata:{contentType:'application/pdf'}});
   try {
-    await env.DB.prepare('INSERT INTO pos (id,owner,number,date,vendor,items,total,pdf) VALUES (?,?,?,?,?,?,?,?)').bind(id,u.username,v.number,v.date,v.vendor,JSON.stringify(v.items),v.total,key).run();
+    await env.DB.prepare('INSERT INTO pos (id,owner,number,date,vendor,items,total,pdf,extraction) VALUES (?,?,?,?,?,?,?,?,?)').bind(id,u.username,v.number,v.date,v.vendor,JSON.stringify(v.items),v.total,key,JSON.stringify(extraction)).run();
   } catch(e) {
+    try{await env.BUCKET.delete(key);}catch{console.error(JSON.stringify({time:new Date().toISOString(),event:'pdf.cleanup_failed'}));}
     if(!duplicate(e)) throw e;
-    await env.BUCKET.delete(key);
     throw new Problem(409,'That PO number already exists.');
   }
   return json({id},201);
@@ -55,7 +52,8 @@ export async function detail(env,p,u){
   requireThat(visible(p,u),404,'Order unavailable.');
   const history=(await env.DB.prepare('SELECT action,actor,remark,time FROM history WHERE po=? ORDER BY sequence').bind(p.id).all()).results;
   const {pdf,operation,...view}=p;
-  return json({...view,items:JSON.parse(p.items),history,canEdit:!!(ownCreator(p,u)&&editable(p)),canDecide:!!(u.approver&&p.owner!==u.username&&p.status==='SUBMITTED')});
+  const items=JSON.parse(p.items);
+  return json({...view,extraction:p.extraction?JSON.parse(p.extraction):null,validation:checks({...p,items}),items,history,canEdit:!!(ownCreator(p,u)&&editable(p)),canDecide:!!(u.approver&&p.owner!==u.username&&p.status==='SUBMITTED')});
 }
 export async function pdf(env,p,u){
   requireThat(visible(p,u),404,'Order unavailable.');

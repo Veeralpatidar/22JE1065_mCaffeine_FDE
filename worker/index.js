@@ -2,6 +2,7 @@ import {home,browser} from './ui.js';
 import {identity,login,logout} from './auth.js';
 import {Problem,requireThat,json} from './common.js';
 import * as orders from './orders.js';
+import {preview} from './pdf-extraction.js';
 
 async function health(env){
     const headers = {'Cache-Control':'no-store'};
@@ -24,6 +25,7 @@ async function route(request,env){
   if(path==='/api/login'&&method==='POST')return login(request,env.DB);
   const user=await identity(request,env.DB);
   if(path==='/api/logout'&&method==='POST')return logout(request,env.DB);
+  if(path==='/api/orders/extract'&&method==='POST')return preview(request,user);
   if(path==='/api/orders'){
     if(method==='GET')return orders.list(env.DB,user);
     if(method==='POST')return orders.create(request,env,user);

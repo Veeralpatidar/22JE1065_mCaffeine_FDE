@@ -1,0 +1,1 @@
+ALTER TABLE `pos` ADD `extraction` text;

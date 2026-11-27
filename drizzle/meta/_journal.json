@@ -8,6 +8,13 @@
       "when": 1795792467965,
       "tag": "0000_sturdy_mister_fear",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1795799534256,
+      "tag": "0001_amazing_alex_power",
+      "breakpoints": true
     }
   ]
 }

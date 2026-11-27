@@ -10,7 +10,7 @@ export const pos = sqliteTable('pos', {
   id: text().primaryKey(), owner: text().notNull().references(()=>users.username),
   number: text().notNull().unique(), date: text().notNull(), vendor: text().notNull(), items: text().notNull(),
   total: integer().notNull(), pdf: text().notNull(), status: text().notNull().default('DRAFT'),
-  revision: integer().notNull().default(1), operation: text()
+  revision: integer().notNull().default(1), operation: text(), extraction: text()
 });
 export const history = sqliteTable('history', {
   sequence: integer().primaryKey({autoIncrement:true}), po: text().notNull().references(()=>pos.id),

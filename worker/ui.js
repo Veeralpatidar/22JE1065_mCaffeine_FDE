@@ -1,5 +1,5 @@
 export const home = `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PEP Order Desk</title><style>
-*{box-sizing:border-box}body{margin:0;background:#f4f6f5;color:#183330;font:16px/1.5 system-ui}header{background:#133d39;color:white;display:flex;justify-content:space-between;align-items:center;padding:14px max(5vw,20px);gap:15px}header strong{font-size:21px}main{max-width:1080px;padding:32px 18px 64px;margin:auto}section,article{background:white;border:1px solid #d4dfdb;border-radius:8px;padding:22px;margin:16px 0}h1,h2,h3{line-height:1.2;margin:0 0 16px}h1{font-size:34px}h2{font-size:22px}h3{font-size:17px}button,.button{background:#166557;color:white;padding:9px 15px;border:0;border-radius:5px;font:inherit;cursor:pointer}button.alt{background:#e4eeeb;color:#174a40}button:disabled{opacity:.55}input,textarea{width:100%;padding:8px;border:1px solid #869c95;border-radius:4px;font:inherit}label{display:block;font-weight:600;margin:9px 0}label input,label textarea{display:block;font-weight:400;margin-top:4px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}.actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:14px 0}.line{border-top:1px solid #d4dfdb;padding:10px 0}.login{max-width:420px;margin:7vh auto}.note{color:#526661}.error{color:#932b28;background:#fff1ed;padding:10px}.order{width:100%;display:flex;justify-content:space-between;gap:12px;margin:7px 0;text-align:left;background:#eff5f2;color:#16443b}.pill{font:600 13px system-ui;background:#dcece5;padding:5px 8px;border-radius:4px}.scroll{overflow-x:auto}table{border-collapse:collapse;width:100%}th,td{text-align:left;padding:8px;border-bottom:1px solid #dae2df}a{color:#075b49}button:focus-visible,a:focus-visible{outline:3px solid #c78924}#msg:empty{display:none}#msg{position:sticky;top:0;z-index:1}
+*{box-sizing:border-box}body{margin:0;background:#f4f6f5;color:#183330;font:16px/1.5 system-ui}header{background:#133d39;color:white;display:flex;justify-content:space-between;align-items:center;padding:14px max(5vw,20px);gap:15px}header strong{font-size:21px}main{max-width:1080px;padding:32px 18px 64px;margin:auto}section,article{background:white;border:1px solid #d4dfdb;border-radius:8px;padding:22px;margin:16px 0}h1,h2,h3{line-height:1.2;margin:0 0 16px}h1{font-size:34px}h2{font-size:22px}h3{font-size:17px}button,.button{background:#166557;color:white;padding:9px 15px;border:0;border-radius:5px;font:inherit;cursor:pointer}button.alt{background:#e4eeeb;color:#174a40}button:disabled{opacity:.55}input,textarea{width:100%;padding:8px;border:1px solid #869c95;border-radius:4px;font:inherit}label{display:block;font-weight:600;margin:9px 0}label input,label textarea{display:block;font-weight:400;margin-top:4px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}.actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:14px 0}.line{border-top:1px solid #d4dfdb;padding:10px 0}.login{max-width:420px;margin:7vh auto}.note{color:#526661}.error{color:#932b28;background:#fff1ed;padding:10px}.order{width:100%;display:flex;justify-content:space-between;gap:12px;margin:7px 0;text-align:left;background:#eff5f2;color:#16443b}.pill{font:600 13px system-ui;background:#dcece5;padding:5px 8px;border-radius:4px}.scroll{overflow-x:auto}table{border-collapse:collapse;width:100%}th,td{text-align:left;padding:8px;border-bottom:1px solid #dae2df}a{color:#075b49}button:focus-visible,a:focus-visible{outline:3px solid #c78924}input[aria-invalid=true]{border:2px solid #932b28;background:#fff1ed}#msg:empty{display:none}#msg{position:sticky;top:0;z-index:1}
 </style><header><strong>PEP Order Desk</strong><span id="account"></span></header><main><p id="msg" role="alert"></p><div id="view">Loading orders…</div></main><script type="module" src="/app.js"></script></html>`;
 
 export function browser(){
@@ -39,9 +39,49 @@ export function browser(){
   }
   function paise(s){const [whole,fraction='']=s.split('.');if(!/^\d+$/.test(whole)||!/^\d{0,2}$/.test(fraction))throw Error('Enter money with up to two decimal places.');return Number(whole)*100+Number(fraction.padEnd(2,'0'));}
   function form(p){
-    view.innerHTML='<button id="back" class="alt">Back</button><section><h1>'+(p?'Edit order':'Create draft')+'</h1><form id="editor"><div class="grid">'+input('PO number','number',p?.number)+input('PO date','date',p?.date,'date')+input('Vendor','vendor',p?.vendor)+input('Printed total (₹)','total',p?(p.total/100).toFixed(2):'','number','min="0" step=".01"')+'</div><h2>Line items</h2><div id="lines"></div><button type="button" class="alt" id="add">Add line item</button>'+(p?'':'<label>Original PDF (up to 5 MB)<input type="file" name="pdf" accept="application/pdf" required></label>')+'<div class="actions"><button>Save '+(p?'changes':'draft')+'</button></div></form></section>';
+    view.innerHTML='<button id="back" class="alt">Back</button><section><h1>'+(p?'Edit order':'Create draft')+'</h1><form id="editor"><div class="grid">'+input('PO number','number',p?.number)+input('PO date','date',p?.date,'date')+input('Vendor','vendor',p?.vendor)+input('Printed total (₹)','total',p?(p.total/100).toFixed(2):'','number','min="0" step=".01"')+'</div><h2>Line items</h2><div id="lines"></div><button type="button" class="alt" id="add">Add line item</button>'+(p?'':'<label>Original PDF (up to 5 MB)<input type="file" name="pdf" accept="application/pdf" required></label><button type="button" class="alt" id="extract">Read PDF into form</button><p class="note" id="extraction-note" role="status">Select a PDF to extract or enter the fields manually.</p>')+'<div class="actions"><button>Save '+(p?'changes':'draft')+'</button></div></form></section>';
     el('back').onclick=handle(()=>p?open(p.id):dashboard()); el('add').onclick=()=>line();
     (p?p.items:[{}]).forEach(line);
+    const editor=el('editor');
+    const readRows=()=>[...editor.querySelectorAll('.line')].map(row=>{
+      const f=n=>row.querySelector('[name='+n+']').value;
+      return {sku:f('sku'),description:f('description'),qty:Number(f('qty')),price:paise(f('price')),amount:paise(f('amount'))};
+    });
+    const summary=document.createElement('p');summary.className='note';summary.setAttribute('role','status');editor.querySelector('.actions').before(summary);
+    function review(){
+      editor.querySelectorAll('[aria-invalid]').forEach(i=>i.removeAttribute('aria-invalid'));
+      const field=n=>editor.elements.namedItem(n);
+      try{
+        const items=readRows(),total=paise(field('total').value),sum=items.reduce((s,r)=>s+BigInt(r.amount),0n);
+        const messages=[];
+        items.forEach((r,i)=>{const d=BigInt(r.qty)*BigInt(r.price)-BigInt(r.amount);if(d>100n||d< -100n){editor.querySelectorAll('.line')[i].querySelector('[name=amount]').setAttribute('aria-invalid','true');messages.push('Check line '+(i+1)+' amount.');}});
+        if(items.length&&(sum-BigInt(total)>100n||BigInt(total)-sum>100n)){field('total').setAttribute('aria-invalid','true');messages.push('Printed total differs by more than ₹1.');}
+        summary.textContent=(items.length?'Calculated line total: '+currency(Number(sum)):'Line items not checked')+(messages.length?' — '+messages.join(' '):'');
+      }catch{summary.textContent='Complete valid numbers to check the amounts.';}
+    }
+    editor.addEventListener('input',review);editor.addEventListener('click',()=>queueMicrotask(review));review();
+    if(!p){
+      const fileInput=editor.elements.namedItem('pdf'),button=el('extract');
+      let requestVersion=0;
+      async function extract(){
+        const file=fileInput.files[0];if(!file)return;
+        const version=++requestVersion;button.disabled=true;el('extraction-note').textContent='Reading PDF…';
+        try{
+          const upload=new FormData();upload.set('pdf',file);
+          const result=await api('orders/extract','POST',upload);
+          if(version!==requestVersion||fileInput.files[0]!==file)return;
+          const o=result.order;
+          for(const name of ['number','date','vendor'])editor.elements.namedItem(name).value=o[name]??'';
+          editor.elements.namedItem('total').value=o.total==null?'':(o.total/100).toFixed(2);
+          el('lines').replaceChildren();o.items.forEach(line);
+          el('extraction-note').textContent=(result.method==='text_layer'?'Text layer read. Review against the PDF.':'Manual entry required.')+' '+result.warnings.join(' ');
+          review();
+        }catch(e){if(version===requestVersion&&el('extraction-note'))el('extraction-note').textContent=e.message;}
+        finally{if(version===requestVersion)button.disabled=false;}
+      }
+      button.onclick=()=>{if(confirm('Replace the current form values with extracted values?'))extract();};
+      fileInput.onchange=()=>{requestVersion++;button.disabled=false;if(fileInput.files[0]&&(!editor.elements.namedItem('number').value||confirm('Replace current values with the new PDF?')))extract();};
+    }
     el('editor').onsubmit=handle(async e=>{
       const f=e.target, values=new FormData(f),items=[...f.querySelectorAll('.line')].map(row=>{
         const field=n=>row.querySelector('[name='+n+']').value;
@@ -55,7 +95,7 @@ export function browser(){
   async function open(id){
     const p=await api('orders/'+id);
     const table=p.items.length?'<div class="scroll"><table><tr><th>SKU</th><th>Description</th><th>Qty</th><th>Unit price</th><th>Line amount</th></tr>'+p.items.map(i=>`<tr><td>${esc(i.sku)}</td><td>${esc(i.description)}</td><td>${i.qty}</td><td>${currency(i.price)}</td><td>${currency(i.amount)}</td></tr>`).join('')+'</table></div>':'<p>Line items not checked</p>';
-    view.innerHTML=`<button id="back" class="alt">All orders</button><section><span class="pill">${p.status}</span><h1>${esc(p.number)}</h1><p>${esc(p.vendor)} · ${date(p.date)} · Created by ${esc(p.owner)}</p>${table}<p>Printed total <b>${currency(p.total)}</b></p><a target="_blank" rel="noopener" href="/api/orders/${id}/pdf">Open original PDF</a><div class="actions" id="buttons"></div></section><section><h2>Action history</h2>${p.history.map(h=>`<p><strong>${esc(h.action)}</strong> · ${esc(h.actor)} · ${esc(h.time)} UTC<br>${esc(h.remark)}</p>`).join('')||'<p>No decisions recorded.</p>'}</section>`;
+    view.innerHTML=`<button id="back" class="alt">All orders</button><section><span class="pill">${p.status}</span><h1>${esc(p.number)}</h1><p>${esc(p.vendor)} · ${date(p.date)} · Created by ${esc(p.owner)}</p>${table}<p>Printed total <b>${currency(p.total)}</b></p><p>Calculated total: ${p.validation.calculatedTotal===null?'Line items not checked':currency(p.validation.calculatedTotal)}</p><p>Extraction method: ${esc(p.extraction?.method||'manual (legacy)')}</p>${p.extraction?.order?.total!=null?'<p>Original extracted printed total: '+currency(p.extraction.order.total)+'</p>':''}${p.validation.issues.map(i=>'<p class="error">'+esc(i.message)+'</p>').join('')}<a target="_blank" rel="noopener" href="/api/orders/${id}/pdf">Open original PDF</a><div class="actions" id="buttons"></div></section><section><h2>Action history</h2>${p.history.map(h=>`<p><strong>${esc(h.action)}</strong> · ${esc(h.actor)} · ${esc(h.time)} UTC<br>${esc(h.remark)}</p>`).join('')||'<p>No decisions recorded.</p>'}</section>`;
     el('back').onclick=handle(dashboard);
     if(p.canEdit){el('buttons').innerHTML='<button id="edit" class="alt">Edit order</button><button id="submit">'+(p.status==='REJECTED'?'Resubmit':'Submit to Finance')+'</button>';
       el('edit').onclick=()=>form(p);el('submit').onclick=handle(async()=>{await api('orders/'+id+'/submit','POST',{revision:p.revision});await open(id);});}

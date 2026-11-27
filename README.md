@@ -3,10 +3,10 @@ Veeral Patidar · 22JE1065
 
 Live app: https://pep-po-desk-vp26.dependablemango64.chatgpt.site
 
-## Milestone 2
+## Milestones 2–3 — approval workflow and permission tests
 Sign in as creator1 or creator2 to enter purchase orders and attach original PDFs. Sign in as approver1 to review submitted orders. lead1 has both roles. Demo passwords are provided separately. Use synthetic data for this shared demonstration.
 
-Create draft → submit → reject with a reason → edit the same PO → resubmit → approve. Open the original from the PO page. The creator can see the final record and all four actions. The Finance queue shows submitted orders only. PDF extraction and OCR are outside this milestone.
+Create draft → submit → reject with a reason → edit the same PO → resubmit → approve. Open the original from the PO page. The creator can see the final record and all four actions. The Finance queue shows submitted orders only. Milestone 4 adds editable PDF text extraction; OCR remains out of scope.
 
 ## Run and verify
 Use Node 24. Run `npm ci`, `npm test`, then `npm run build`. The tests use real local SQLite and an in-memory object-store stand-in. The build bundles the Worker into dist/server/index.js. For an isolated local UI with the same service bindings:
@@ -28,3 +28,9 @@ GET /health issues SELECT 1 against D1. Success returns 200, failure returns a f
 
 ## Trade-offs
 This milestone uses manual entry, whole-unit quantities and one immutable original per order. Rows with invalid numbers are refused; draft arithmetic can be corrected before submission. Submission rechecks line and document maths within ₹1. Empty item lists show “Line items not checked”. An uncertain write failure after R2 has stored the file may leave an unreferenced object; old unreferenced objects can be reconciled against D1.
+
+## Milestone 4 — digital PDF review
+
+The authenticated creator can select one PDF up to 5 MB. The Worker reads its text layer using unpdf/PDF.js, groups text by position and prepopulates editable fields. Unreadable PDFs fall back to manual entry. The original file remains in private R2; the initial extracted fields and extraction method are stored separately from the editable order. Server checks use integer paise, exact arithmetic and a ₹1 inclusive tolerance. Duplicate numbers remain globally unique. The parser supports common labels and wrapped descriptions; arbitrary layouts, rotated text, password-protected documents and scans are not guaranteed to extract. No OCR. Review values against the original.
+
+Run npm test and npm run build. To exercise the four assignment files, set SAMPLE_PDF_DIR to the directory holding them and run npm test. Verify the deployed UI and /health separately; do not mark deployment or permission tests as passed until actually run.
