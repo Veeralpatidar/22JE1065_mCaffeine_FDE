@@ -1,3 +1,4 @@
+import {verifyPermissions} from '../scripts/verify-permissions.js';
 import test from 'node:test';
 import { DatabaseSync } from 'node:sqlite';
 import {readFileSync,readdirSync} from 'node:fs';
@@ -5,7 +6,7 @@ import bcrypt from 'bcryptjs';
 import app from '../worker/index.js';
 import {verifyFlow} from '../scripts/verify-flow.js';
 
-test('four demo roles complete the full manual workflow and denied requests preserve history',async()=>{
+async function withFixture(check){
   const sql=new DatabaseSync(':memory:');
   for(const f of readdirSync('drizzle').filter(f=>f.endsWith('.sql')).sort())sql.exec(readFileSync('drizzle/'+f,'utf8'));
   const passwords={};for(const [name,c,a] of [['creator1',1,0],['creator2',1,0],['approver1',0,1],['lead1',1,1]]){
@@ -21,5 +22,8 @@ test('four demo roles complete the full manual workflow and denied requests pres
   }};
   const files=new Map();
   const BUCKET={put:(k,b)=>files.set(k,b),get:k=>files.has(k)?{body:files.get(k)}:null,delete:k=>files.delete(k)};
-  try{await verifyFlow(req=>app.fetch(req,{DB,BUCKET}),'https://test.invalid',passwords,Buffer.from('%PDF-1.7\nlocal fixture\n%%EOF'));}finally{sql.close();}
-});
+  try{await check(req=>app.fetch(req,{DB,BUCKET}),'https://test.invalid',passwords,Buffer.from('%PDF-1.7\nlocal fixture\n%%EOF'));}finally{sql.close();}
+}
+
+test('manual approval workflow',()=>withFixture(verifyFlow));
+test('section 3 permission matrix',()=>withFixture(verifyPermissions));

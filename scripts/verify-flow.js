@@ -1,19 +1,9 @@
+import {permissionClient} from './permission-client.js';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 
 export async function verifyFlow(send,base,passwords,pdf){
-  const request=(path,options={})=>send(new Request(base+path,options));
-  async function signIn(username){
-    const response=await request('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password:passwords[username]})});
-    assert.equal(response.status,200,'login '+username);
-    const cookie=response.headers.get('set-cookie').split(';')[0];
-    return async (path,method='GET',data)=>{
-      const headers={Cookie:cookie};let body;
-      if(data instanceof FormData)body=data;
-      else if(data){headers['Content-Type']='application/json';body=JSON.stringify(data);}
-      return request('/api/'+path,{method,headers,body});
-    };
-  }
+  const {request,signIn}=permissionClient(send,base,passwords);
   const creator=await signIn('creator1'),other=await signIn('creator2'),finance=await signIn('approver1'),lead=await signIn('lead1');
   const number='M2-'+crypto.randomUUID().slice(0,8).toUpperCase();
   const draft={number,date:'2026-11-27',vendor:'Demo packaging vendor',total:12000,items:[{sku:'PK-01',description:'Cartons',qty:2,price:6000,amount:12000}]};
